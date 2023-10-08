@@ -1,0 +1,27 @@
+---
+name: Greenboot ci
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  cleanup-vsphere:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+      - name: Prepare greenboot
+        run: |
+          sudo pwd
+          sudo ls
+      - name: Checkout osbuild-composer
+        uses: actions/checkout@v3
+        with:
+          repository: osbuild/osbuild-composer
+          ref: main
+      - name: Prepare greenboot
+        run: |
+          sudo pwd
+          sudo ls
