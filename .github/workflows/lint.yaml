@@ -1,0 +1,29 @@
+# ---
+# name: Lint
+
+# on:
+#   pull_request:
+#     branches:
+#       - "*"
+
+# jobs:
+#   shellcheck:
+#     name: "🔭 Shellcheck"
+#     runs-on: ubuntu-20.04
+#     steps:
+#       - uses: actions/checkout@v3
+
+#       - name: Run ShellCheck
+#         uses: ludeeus/action-shellcheck@master
+#         env:
+#           SHELLCHECK_OPTS: -e SC1091 -e SC2002 -e SC2317
+
+#   yamllint:
+#     name: "🔬 yamlint"
+#     runs-on: ubuntu-20.04
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Run yamllint
+#         uses: ibiqlik/action-yamllint@v3
+#         with:
+#           config_file: .lintconfig.yml

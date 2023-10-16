@@ -1,64 +1,67 @@
----
-name: Greenboot ci
+# ---
+# name: Greenboot ci
 
-on:
-  issue_comment:
-    types:
-      - created
+# on:
+#   issue_comment:
+#     types:
+#       - created
 
-jobs:
-  greenboot-ci-test:
-    runs-on: [fedora-39]
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v3
-      - name: Check info
-        run: |
-          sudo pwd
-          sudo ls
-      - name: Checkout images code
-        uses: actions/checkout@v3
-        with:
-          repository: say-paul/images
-          ref: remove-old-greenboot-services
-          path: images
-      - name: Check info
-        run: |
-          sudo pwd
-          sudo ls
-      - name: Checkout osbuild-composer code
-        run: git clone https://github.com/osbuild/osbuild-composer.git
-      - name: Check info
-        run: |
-          sudo pwd
-          sudo ls
-      - name: Run greenboottest
-        run: ./test1.sh
-      - name: Build osbuild-composer
-        run: |
-          ls -al
-          pwd
-          git status
-          ls -a ../images
-          git -C ../images status
-          go clean -modcache
-          go mod tidy
-          go mod edit -replace github.com/osbuild/images=../images
-          GOPROXY=direct GOSUMDB=off ./tools/prepare-source.sh
+# jobs:
+#   greenboot-ci-test:
+#     if: ${{ needs.pr-info.outputs.allowed_user == 'true' && github.event.issue.pull_request &&
+#           (endsWith(github.event.comment.body, '/test-greenboot') ||
+#           endsWith(github.event.comment.body, '/test-greenboot-all')) }}
+#     runs-on: [fedora-39]
+#     steps:
+#       - name: Clone repository
+#         uses: actions/checkout@v3
+#       - name: Check info
+#         run: |
+#           sudo pwd
+#           sudo ls
+#       - name: Checkout images code
+#         uses: actions/checkout@v3
+#         with:
+#           repository: say-paul/images
+#           ref: remove-old-greenboot-services
+#           path: images
+#       - name: Check info
+#         run: |
+#           sudo pwd
+#           sudo ls
+#       - name: Checkout osbuild-composer code
+#         run: git clone https://github.com/osbuild/osbuild-composer.git
+#       - name: Check info
+#         run: |
+#           sudo pwd
+#           sudo ls
+#       - name: Run greenboottest
+#         run: ./test1.sh
+#       - name: Build osbuild-composer
+#         run: |
+#           ls -al
+#           pwd
+#           git status
+#           ls -a ../images
+#           git -C ../images status
+#           go clean -modcache
+#           go mod tidy
+#           go mod edit -replace github.com/osbuild/images=../images
+#           GOPROXY=direct GOSUMDB=off ./tools/prepare-source.sh
 
-          git config --global user.name "greenboot bot"
-          git config --global user.email "greenboot-bot@greenboot.com"
-          git status
-          git add -A
-          git commit -m "new build for greenboot test"
+#           git config --global user.name "greenboot bot"
+#           git config --global user.email "greenboot-bot@greenboot.com"
+#           git status
+#           git add -A
+#           git commit -m "new build for greenboot test"
 
-          make rpm
+#           make rpm
 
-          dnf install -y ./rpmbuild/RPMS/x86_64/osbuild-composer-*
-        working-directory: ./osbuild-composer
-      - name: Check info
-        run: |
-          sudo pwd
-          sudo ls
-      - name: Run greenboottest
-        run: ./test1.sh
+#           dnf install -y ./rpmbuild/RPMS/x86_64/osbuild-composer-*
+#         working-directory: ./osbuild-composer
+#       - name: Check info
+#         run: |
+#           sudo pwd
+#           sudo ls
+#       - name: Run greenboottest
+#         run: ./test1.sh
