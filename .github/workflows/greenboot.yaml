@@ -8,6 +8,9 @@ on:
 
 jobs:
   greenboot-ci-test:
+    if: ${{ needs.pr-info.outputs.allowed_user == 'true' && github.event.issue.pull_request &&
+          (endsWith(github.event.comment.body, '/test-greenboot') ||
+          endsWith(github.event.comment.body, '/test-greenboot-all')) }}
     runs-on: [fedora-39]
     steps:
       - name: Clone repository
