@@ -30,10 +30,3 @@ jobs:
             git checkout -b PR-${{ github.event.pull_request.number }}
           fi
           git push -f ci
-
-      - name: Trigger GitLab nightly pipeline against this PR
-        run: |
-            curl --request POST --fail --form "token=$GITLAB_TOKEN" \
-                "https://gitlab.com/api/v4/projects/51299851/trigger/pipeline"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
