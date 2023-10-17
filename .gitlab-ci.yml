@@ -1,0 +1,14 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+  script:
+    - echo "Hello, $GITLAB_USER_LOGIN!"
+
+test:
+  stage: test
+  script:
+    - test.sh
