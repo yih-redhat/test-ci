@@ -1,0 +1,14 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - make
+    - make install
+
+test:
+  stage: test
+  script:
+    - test.sh
