@@ -36,6 +36,9 @@ jobs:
           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print pr info
+        run: |
+          echo "pull request data is:\n${{ steps.pr-api.outputs.data }}"
 
     outputs:
       allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
@@ -51,12 +54,6 @@ jobs:
       STATUS_NAME: test-93
 
     steps:
-      - name: Hello world
-        run: |
-          echo "target branch: $GITHUB_BASE_REF"
-          echo "source branch: $GITHUB_HEAD_REF"
-          echo "target branch: ${{ github.base_ref  }}"
-          echo "source branch: ${{ github.head_ref  }}"
       - name: Create in-progress status
         uses: octokit/request-action@v2.x
         with:

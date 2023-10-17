@@ -39,5 +39,4 @@ jobs:
 
             # Simulate a nightly CI pipeline against this PR
             curl --request POST --fail --form "token=$GITLAB_TOKEN" \
-                --form ref=${{ GITHUB_HEAD_REF }} \
                 "https://gitlab.com/api/v4/projects/$PROJECT_ID/trigger/pipeline"
