@@ -32,7 +32,6 @@ jobs:
           git push -f ci
 
       - name: Trigger GitLab nightly pipeline against this PR
-        if: env.GITLAB_TOKEN && steps.pr_data.outputs.pr_branch
         run: |
             # test-ci
             PROJECT_ID=51299851
@@ -40,3 +39,5 @@ jobs:
             # Simulate a nightly CI pipeline against this PR
             curl --request POST --fail --form "token=$GITLAB_TOKEN" \
                 "https://gitlab.com/api/v4/projects/$PROJECT_ID/trigger/pipeline"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
