@@ -53,10 +53,10 @@ jobs:
     steps:
       - name: Hello world
         run: |
-          echo target branch: $GITHUB_BASE_REF!
-          echo source branch: $GITHUB_HEAD_REF!
-          echo target branch: ${{ github.base_ref  }}
-          echo source branch: ${{ github.head_ref  }}
+          echo "target branch: $GITHUB_BASE_REF"
+          echo "source branch: $GITHUB_HEAD_REF"
+          echo "target branch: ${{ github.base_ref  }}"
+          echo "source branch: ${{ github.head_ref  }}"
       - name: Create in-progress status
         uses: octokit/request-action@v2.x
         with:
