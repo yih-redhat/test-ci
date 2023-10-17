@@ -51,6 +51,10 @@ jobs:
       STATUS_NAME: test-93
 
     steps:
+      - name: Hello world
+        run: |
+          echo target branch: $GITHUB_BASE_REF!
+          echo source branch: $GITHUB_HEAD_REF!
       - name: Create in-progress status
         uses: octokit/request-action@v2.x
         with:
