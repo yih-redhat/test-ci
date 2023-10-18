@@ -7,6 +7,41 @@
 #       - created
 
 # jobs:
+#   pr-info:
+#     if: ${{ github.event.issue.pull_request &&
+#             (startsWith(github.event.comment.body, '/test') ||
+#             startsWith(github.event.comment.body, '/test-all')) }}
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Query author repository permissions
+#         uses: octokit/request-action@v2.x
+#         id: user_permission
+#         with:
+#           route: GET /repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#       # restrict running of tests to users with admin or write permission for the repository
+#       # see https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-repository-permissions-for-a-user
+#       - name: Check if user does have correct permissions
+#         if: contains('admin write', fromJson(steps.user_permission.outputs.data).permission)
+#         id: check_user_perm
+#         run: |
+#           echo "User '${{ github.event.sender.login }}' has permission '${{ fromJson(steps.user_permission.outputs.data).permission }}' allowed values: 'admin', 'write'"
+#           echo "allowed_user=true" >> $GITHUB_OUTPUT
+          
+#       - name: Get information for pull request
+#         uses: octokit/request-action@v2.x
+#         id: pr-api
+#         with:
+#           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#     outputs:
+#       allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
+#       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
+
 #   greenboot-ci-test:
 #     if: ${{ needs.pr-info.outputs.allowed_user == 'true' && github.event.issue.pull_request &&
 #           (endsWith(github.event.comment.body, '/test-greenboot') ||
@@ -36,7 +71,7 @@
 #           sudo pwd
 #           sudo ls
 #       - name: Run greenboottest
-#         run: ./test1.sh
+#         run: ./test.sh
 #       - name: Build osbuild-composer
 #         run: |
 #           ls -al
@@ -64,4 +99,4 @@
 #           sudo pwd
 #           sudo ls
 #       - name: Run greenboottest
-#         run: ./test1.sh
+#         run: ./test.sh
