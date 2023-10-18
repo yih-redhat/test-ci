@@ -1,0 +1,14 @@
+---
+name: CI test on main-branch
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  pr-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: echo "hello world"
