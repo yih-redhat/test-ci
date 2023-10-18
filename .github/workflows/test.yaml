@@ -1,129 +1,101 @@
-# ---
-# name: RHEL 9.3.0 test
+---
+name: Run Edge Test on RHEL 9.3.0
 
-# on:
-#   issue_comment:
-#     types:
-#       - created
+on:
+  issue_comment:
+    types:
+      - created
 
-# jobs:
-#   pr-info:
-#     if: ${{ github.event.issue.pull_request &&
-#             (endsWith(github.event.comment.body, '/test-93') ||
-#             endsWith(github.event.comment.body, '/test-93-all')) }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Query author repository permissions
-#         uses: octokit/request-action@v2.x
-#         id: user_permission
-#         with:
-#           route: GET /repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  pr-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR number from string PR-xxxx
+        id: pr-num
+        run: |
+          PR_NUM=$(echo "${{ github.event.client_payload.pr_number }}" | cut -d'-' -f 2)
+          echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+    outputs:
+      allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
+      sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
 
-#       # restrict running of tests to users with admin or write permission for the repository
-#       # see https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-repository-permissions-for-a-user
-#       - name: Check if user does have correct permissions
-#         if: contains('admin write', fromJson(steps.user_permission.outputs.data).permission)
-#         id: check_user_perm
-#         run: |
-#           echo "User '${{ github.event.sender.login }}' has permission '${{ fromJson(steps.user_permission.outputs.data).permission }}' allowed values: 'admin', 'write'"
-#           echo "allowed_user=true" >> $GITHUB_OUTPUT
-#       - name: Get information for pull request
-#         uses: octokit/request-action@v2.x
-#         id: pr-api
-#         with:
-#           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       - name: Print pr info
-#         run: |
-#           echo "pull request data is:\n${{ steps.pr-api.outputs.data }}"
+    outputs:
+      pr_number: ${{ steps.pr-num.outputs.pr_number }}
 
-#     outputs:
-#       allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
-#       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
-#       base_ref: ${{ fromJson(steps.pr-api.outputs.data).base.ref }}
+  pre-edge-commit-93:
+    needs: pr-info
+    if: ${{ needs.pr-info.outputs.pr_number == 29 }}
+    runs-on: ubuntu-latest
+    env:
+      STATUS_NAME: edge-commit-9.3
+    steps:
+      - name: Create in-progress status
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: pending
+          description: 'Runner has been deploying...'
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#   pre-test-93:
-#     needs: pr-info
-#     if: ${{ needs.pr-info.outputs.base_ref == 'ci' &&
-#             needs.pr-info.outputs.allowed_user == 'true' &&
-#             github.event.issue.pull_request &&
-#             (endsWith(github.event.comment.body, '/test-93') ||
-#             endsWith(github.event.comment.body, '/test-93-all')) }}
-#     runs-on: ubuntu-latest
-#     env:
-#       STATUS_NAME: test-93
+  edge-commit-93:
+    needs: [pr-info, pre-edge-commit-93]
+    if: ${{ needs.pr-info.outputs.pr_number == 29 }}
+    runs-on: ubuntu-latest
+    env:
+      STATUS_NAME: edge-commit-9.3
+    steps:
+      - name: Create in-progress status
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: pending
+          description: 'Test has been running...'
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#     steps:
-#       - name: Create in-progress status
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: pending
-#           description: 'Runner has been deploying...'
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Clone repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.pr-info.outputs.sha }}
+          fetch-depth: 0
 
-#   test-93:
-#     needs: [pr-info, pre-test-93]
-#     runs-on: ubuntu-latest
-#     env:
-#       STATUS_NAME: test-93
+      - name: run ostree.sh
+        run: ./test.sh
+        env:
+          DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
+        timeout-minutes: 60
 
-#     steps:
-#       - name: Create in-progress status
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: pending
-#           description: 'Test has been running...'
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set non cancelled result status
+        if: ${{ !cancelled() }}
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: ${{ job.status }}
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Clone repository
-#         uses: actions/checkout@v3
-#         with:
-#           ref: ${{ needs.pr-info.outputs.sha }}
-#           fetch-depth: 0
+      - name: Set cancelled result status
+        if: ${{ cancelled() }}
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: error
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: run test.sh
-#         run: ./test.sh
-#         env:
-#           DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
-#         timeout-minutes: 60
-
-#       - name: Set non cancelled result status
-#         if: ${{ !cancelled() }}
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: ${{ job.status }}
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#       - name: Set cancelled result status
-#         if: ${{ cancelled() }}
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: error
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#       - uses: actions/upload-artifact@v3
-#         if: ${{ always() }}
-#         with:
-#           name: edge-commit-9.3
-#           path: |
-#             *.json
-#             *.log
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: edge-commit-9.3
+          path: |
+            *.json
+            *.log
