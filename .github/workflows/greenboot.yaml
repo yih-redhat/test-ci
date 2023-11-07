@@ -1,102 +1,91 @@
-# ---
-# name: Greenboot ci
+---
+name: Greenboot ci
 
-# on:
-#   issue_comment:
-#     types:
-#       - created
+on:
+  issue_comment:
+    types:
+      - created
 
-# jobs:
-#   pr-info:
-#     if: ${{ github.event.issue.pull_request &&
-#             (startsWith(github.event.comment.body, '/test') ||
-#             startsWith(github.event.comment.body, '/test-all')) }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Query author repository permissions
-#         uses: octokit/request-action@v2.x
-#         id: user_permission
-#         with:
-#           route: GET /repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  pr-info:
+    if: ${{ github.event.issue.pull_request &&
+            (startsWith(github.event.comment.body, '/test') ||
+            startsWith(github.event.comment.body, '/test-all')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query author repository permissions
+        uses: octokit/request-action@v2.x
+        id: user_permission
+        with:
+          route: GET /repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       # restrict running of tests to users with admin or write permission for the repository
-#       # see https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-repository-permissions-for-a-user
-#       - name: Check if user does have correct permissions
-#         if: contains('admin write', fromJson(steps.user_permission.outputs.data).permission)
-#         id: check_user_perm
-#         run: |
-#           echo "User '${{ github.event.sender.login }}' has permission '${{ fromJson(steps.user_permission.outputs.data).permission }}' allowed values: 'admin', 'write'"
-#           echo "allowed_user=true" >> $GITHUB_OUTPUT
+      # restrict running of tests to users with admin or write permission for the repository
+      # see https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-repository-permissions-for-a-user
+      - name: Check if user does have correct permissions
+        if: contains('admin write', fromJson(steps.user_permission.outputs.data).permission)
+        id: check_user_perm
+        run: |
+          echo "User '${{ github.event.sender.login }}' has permission '${{ fromJson(steps.user_permission.outputs.data).permission }}' allowed values: 'admin', 'write'"
+          echo "allowed_user=true" >> $GITHUB_OUTPUT
           
-#       - name: Get information for pull request
-#         uses: octokit/request-action@v2.x
-#         id: pr-api
-#         with:
-#           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get information for pull request
+        uses: octokit/request-action@v2.x
+        id: pr-api
+        with:
+          route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#     outputs:
-#       allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
-#       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
+    outputs:
+      allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
+      sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
 
-#   greenboot-ci-test:
-#     if: ${{ needs.pr-info.outputs.allowed_user == 'true' && github.event.issue.pull_request &&
-#           (endsWith(github.event.comment.body, '/test-greenboot') ||
-#           endsWith(github.event.comment.body, '/test-greenboot-all')) }}
-#     runs-on: [fedora-39]
-#     steps:
-#       - name: Clone repository
-#         uses: actions/checkout@v3
-#       - name: Check info
-#         run: |
-#           sudo pwd
-#           sudo ls
-#       - name: Checkout images code
-#         uses: actions/checkout@v3
-#         with:
-#           repository: say-paul/images
-#           ref: remove-old-greenboot-services
-#           path: images
-#       - name: Check info
-#         run: |
-#           sudo pwd
-#           sudo ls
-#       - name: Checkout osbuild-composer code
-#         run: git clone https://github.com/osbuild/osbuild-composer.git
-#       - name: Check info
-#         run: |
-#           sudo pwd
-#           sudo ls
-#       - name: Run greenboottest
-#         run: ./test.sh
-#       - name: Build osbuild-composer
-#         run: |
-#           ls -al
-#           pwd
-#           git status
-#           ls -a ../images
-#           git -C ../images status
-#           go clean -modcache
-#           go mod tidy
-#           go mod edit -replace github.com/osbuild/images=../images
-#           GOPROXY=direct GOSUMDB=off ./tools/prepare-source.sh
-
-#           git config --global user.name "greenboot bot"
-#           git config --global user.email "greenboot-bot@greenboot.com"
-#           git status
-#           git add -A
-#           git commit -m "new build for greenboot test"
-
-#           make rpm
-
-#           dnf install -y ./rpmbuild/RPMS/x86_64/osbuild-composer-*
-#         working-directory: ./osbuild-composer
-#       - name: Check info
-#         run: |
-#           sudo pwd
-#           sudo ls
-#       - name: Run greenboottest
-#         run: ./test.sh
+  greenboot-ci-test:
+    if: ${{ needs.pr-info.outputs.allowed_user == 'true' && github.event.issue.pull_request &&
+          (endsWith(github.event.comment.body, '/test') ||
+          endsWith(github.event.comment.body, '/test-all')) }}
+    runs-on: [fedora-39]
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+      - name: Check info
+        run: |
+          sudo pwd
+          sudo ls
+      - name: Checkout images code
+        uses: actions/checkout@v3
+        with:
+          repository: say-paul/images
+          ref: remove-old-greenboot-services
+          path: images
+      - name: Check info
+        run: |
+          sudo pwd
+          sudo ls
+      - name: Checkout osbuild-composer code
+        run: git clone https://github.com/osbuild/osbuild-composer.git
+      - name: Check info
+        run: |
+          sudo pwd
+          sudo ls
+      - name: Run test
+        run: ./test.sh
+      - name: Checkout greenboot ci test code
+        uses: actions/checkout@v3
+        with:
+          repository: yih-redhat/greenboot-ci
+          ref: main
+          path: greenboot-ci
+      - name: Check info
+        run: |
+          sudo pwd
+          sudo ls
+      - name: Run greenboottest
+        run: ./greenboot-rs.sh
+        # working-directory: ./greenboot-ci
+      - name: Check info
+        run: |
+          sudo pwd
+          sudo ls
