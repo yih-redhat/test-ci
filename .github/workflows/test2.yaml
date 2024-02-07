@@ -1,5 +1,5 @@
 ---
-name: Run Edge Test on RHEL 9.3.0
+name: Run Edge Test on RHEL 8.3.0
 
 on:
   issue_comment:
