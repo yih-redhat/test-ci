@@ -1,10 +1,9 @@
 ---
-name: Run Edge Test on RHEL 9.3.0
+name: Run Edge Test on RHEL 8.3.0
 
 on:
-  issue_comment:
-    types:
-      - created
+  repository_dispatch:
+    types: [trigger-workflow]
 
 jobs:
   pr-info:
@@ -28,7 +27,7 @@ jobs:
     needs: pr-info
     runs-on: ubuntu-latest
     env:
-      STATUS_NAME: edge-commit-9.3
+      STATUS_NAME: edge-commit-8.3
     steps:
       - name: Create in-progress status
         uses: octokit/request-action@v2.x
@@ -45,7 +44,7 @@ jobs:
     needs: [pr-info, pre-edge-commit-93]
     runs-on: ubuntu-latest
     env:
-      STATUS_NAME: edge-commit-9.3
+      STATUS_NAME: edge-commit-8.3
     steps:
       - name: Create in-progress status
         uses: octokit/request-action@v2.x
@@ -95,16 +94,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
-          name: edge-commit-9.3
+          name: edge-commit-8.3
           path: |
             *.json
             *.log
-
-  trigger-workflow-8.3:
-    runs-on: ubuntu-latest
-    steps:
-      - name: trigger 8.3 workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          event-type: trigger-workflow
-
