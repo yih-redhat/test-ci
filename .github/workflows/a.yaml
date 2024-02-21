@@ -31,6 +31,7 @@ jobs:
           echo "step2"
 
   trigger-step:
+    if: ${{ always() }}
     needs: [prepare, step1, step2]
     runs-on: ubuntu-latest
     steps:
