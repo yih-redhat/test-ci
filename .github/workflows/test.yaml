@@ -10,16 +10,18 @@ jobs:
   pr-info:
     runs-on: ubuntu-latest
     steps:
+      - name: print pr
+        id: pr-num
+        run: |
+          PR_NUM=$(echo "${{ github.event.issue.number }}")
+          echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
       - name: Get information for pull request
         uses: octokit/request-action@v2.x
         id: pr-api
         with:
-          route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
+          route: GET /repos/${{ github.repository }}/pulls/${{ steps.pr-num.outputs.pr_number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
-      - name: print pr
-        run: |
-          echo "pr_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
     outputs:
       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
       pr_number: ${{ steps.pr-num.outputs.pr_number }}
