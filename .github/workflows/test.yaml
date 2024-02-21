@@ -16,19 +16,13 @@ jobs:
         with:
           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get PR number from string PR-xxxx
-        id: pr-num
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+      - name: print pr
         run: |
-          PR_NUM=$(echo "123456")
-          echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
-      # - name: print pr
-      #   run: |
-      #     echo "pr number is: ${{ github.event.issue.number }}"
+          echo "pr_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
     outputs:
       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
       pr_number: ${{ steps.pr-num.outputs.pr_number }}
-      # pr_number: ${{ github.event.issue.number }}
 
   pre-edge-commit-93:
     needs: pr-info
