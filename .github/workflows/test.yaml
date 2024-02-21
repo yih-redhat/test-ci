@@ -1,112 +1,112 @@
----
-name: Run Edge Test on RHEL 9.3.0
+# ---
+# name: Run Edge Test on RHEL 9.3.0
 
-on:
-  issue_comment:
-    types:
-      - created
+# on:
+#   issue_comment:
+#     types:
+#       - created
 
-jobs:
-  pr-info:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get information for pull request
-        uses: octokit/request-action@v2.x
-        id: pr-api
-        with:
-          route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: print pr
-        run: |
-          echo "pr number is: ${{ github.event.issue.number }}"
-    outputs:
-      sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
-      pr_number: ${{ github.event.issue.number }}
+# jobs:
+#   pr-info:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Get information for pull request
+#         uses: octokit/request-action@v2.x
+#         id: pr-api
+#         with:
+#           route: GET /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - name: print pr
+#         run: |
+#           echo "pr number is: ${{ github.event.issue.number }}"
+#     outputs:
+#       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
+#       pr_number: ${{ github.event.issue.number }}
 
-  pre-edge-commit-93:
-    needs: pr-info
-    runs-on: ubuntu-latest
-    env:
-      STATUS_NAME: edge-commit-9.3
-    steps:
-      - name: Create in-progress status
-        uses: octokit/request-action@v2.x
-        with:
-          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-          context: ${{ env.STATUS_NAME }}
-          state: pending
-          description: 'Runner has been deploying...'
-          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#   pre-edge-commit-93:
+#     needs: pr-info
+#     runs-on: ubuntu-latest
+#     env:
+#       STATUS_NAME: edge-commit-9.3
+#     steps:
+#       - name: Create in-progress status
+#         uses: octokit/request-action@v2.x
+#         with:
+#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+#           context: ${{ env.STATUS_NAME }}
+#           state: pending
+#           description: 'Runner has been deploying...'
+#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  edge-commit-93:
-    needs: [pr-info, pre-edge-commit-93]
-    runs-on: ubuntu-latest
-    env:
-      STATUS_NAME: edge-commit-9.3
-    steps:
-      - name: Create in-progress status
-        uses: octokit/request-action@v2.x
-        with:
-          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-          context: ${{ env.STATUS_NAME }}
-          state: pending
-          description: 'Test has been running...'
-          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#   edge-commit-93:
+#     needs: [pr-info, pre-edge-commit-93]
+#     runs-on: ubuntu-latest
+#     env:
+#       STATUS_NAME: edge-commit-9.3
+#     steps:
+#       - name: Create in-progress status
+#         uses: octokit/request-action@v2.x
+#         with:
+#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+#           context: ${{ env.STATUS_NAME }}
+#           state: pending
+#           description: 'Test has been running...'
+#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Clone repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.pr-info.outputs.sha }}
-          fetch-depth: 0
+#       - name: Clone repository
+#         uses: actions/checkout@v3
+#         with:
+#           ref: ${{ needs.pr-info.outputs.sha }}
+#           fetch-depth: 0
 
-      - name: run ostree.sh
-        run: ./test.sh
-        env:
-          DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
-        timeout-minutes: 60
+#       - name: run ostree.sh
+#         run: ./test.sh
+#         env:
+#           DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
+#         timeout-minutes: 60
 
-      - name: Set non cancelled result status
-        if: ${{ !cancelled() }}
-        uses: octokit/request-action@v2.x
-        with:
-          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-          context: ${{ env.STATUS_NAME }}
-          state: ${{ job.status }}
-          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Set non cancelled result status
+#         if: ${{ !cancelled() }}
+#         uses: octokit/request-action@v2.x
+#         with:
+#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+#           context: ${{ env.STATUS_NAME }}
+#           state: ${{ job.status }}
+#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set cancelled result status
-        if: ${{ cancelled() }}
-        uses: octokit/request-action@v2.x
-        with:
-          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-          context: ${{ env.STATUS_NAME }}
-          state: error
-          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Set cancelled result status
+#         if: ${{ cancelled() }}
+#         uses: octokit/request-action@v2.x
+#         with:
+#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+#           context: ${{ env.STATUS_NAME }}
+#           state: error
+#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
-        with:
-          name: edge-commit-9.3
-          path: |
-            *.json
-            *.log
+#       - uses: actions/upload-artifact@v3
+#         if: ${{ always() }}
+#         with:
+#           name: edge-commit-9.3
+#           path: |
+#             *.json
+#             *.log
 
-  trigger-workflow-83:
-    needs: [pr-info, edge-commit-93]
-    runs-on: ubuntu-latest
-    steps:
-      - name: trigger 8.3 workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          event-type: trigger-workflow
-          client-payload: '{"pr_number": "${{ needs.pr-info.outputs.pr_number }}"}'
+#   trigger-workflow-83:
+#     needs: [pr-info, edge-commit-93]
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: trigger 8.3 workflow
+#         uses: peter-evans/repository-dispatch@v3
+#         with:
+#           event-type: trigger-workflow
+#           client-payload: '{"pr_number": "${{ needs.pr-info.outputs.pr_number }}"}'
 
