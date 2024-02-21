@@ -1,5 +1,5 @@
 #!/bin/bash
 
 echo "You did it!"
-sleep 10
+sleep 15
 echo "done"
