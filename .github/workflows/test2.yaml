@@ -1,106 +1,106 @@
-# ---
-# name: Run Edge Test on RHEL 8.3.0
+---
+name: Run Edge Test on RHEL 8.3.0
 
-# on:
-#   repository_dispatch:
-#     types: [trigger-workflow]
+on:
+  repository_dispatch:
+    types: [trigger-workflow]
 
 
-# jobs:
-#   pr-info:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Get PR number from trigger even
-#         id: pr-num
-#         run: |
-#           PR_NUM=$(echo "${{ github.event.client_payload.pr_number }}")
-#           echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
-#       - name: Get information for pull request
-#         uses: octokit/request-action@v2.x
-#         id: pr-api
-#         with:
-#           route: GET /repos/${{ github.repository }}/pulls/${{ steps.pr-num.outputs.pr_number }}
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       - name: print pr
-#         run: |
-#           echo "pr number is: ${{ steps.pr-num.outputs.pr_number }}"
-#     outputs:
-#       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
-#       pr_number: ${{ steps.pr-num.outputs.pr_number }}
+jobs:
+  pr-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR number from trigger even
+        id: pr-num
+        run: |
+          PR_NUM=$(echo "${{ github.event.client_payload.pr_number }}")
+          echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+      - name: Get information for pull request
+        uses: octokit/request-action@v2.x
+        id: pr-api
+        with:
+          route: GET /repos/${{ github.repository }}/pulls/${{ steps.pr-num.outputs.pr_number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: print pr
+        run: |
+          echo "pr number is: ${{ steps.pr-num.outputs.pr_number }}"
+    outputs:
+      sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
+      pr_number: ${{ steps.pr-num.outputs.pr_number }}
 
-#   pre-edge-commit-83:
-#     needs: pr-info
-#     runs-on: ubuntu-latest
-#     env:
-#       STATUS_NAME: edge-commit-8.3
-#     steps:
-#       - name: Create in-progress status
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: pending
-#           description: 'Runner has been deploying...'
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  pre-edge-commit-83:
+    needs: pr-info
+    runs-on: ubuntu-latest
+    env:
+      STATUS_NAME: edge-commit-8.3
+    steps:
+      - name: Create in-progress status
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: pending
+          description: 'Runner has been deploying...'
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#   edge-commit-83:
-#     needs: [pr-info, pre-edge-commit-83]
-#     runs-on: ubuntu-latest
-#     env:
-#       STATUS_NAME: edge-commit-8.3
-#     steps:
-#       - name: Create in-progress status
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: pending
-#           description: 'Test has been running...'
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  edge-commit-83:
+    needs: [pr-info, pre-edge-commit-83]
+    runs-on: ubuntu-latest
+    env:
+      STATUS_NAME: edge-commit-8.3
+    steps:
+      - name: Create in-progress status
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: pending
+          description: 'Test has been running...'
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Clone repository
-#         uses: actions/checkout@v3
-#         with:
-#           ref: ${{ needs.pr-info.outputs.sha }}
-#           fetch-depth: 0
+      - name: Clone repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.pr-info.outputs.sha }}
+          fetch-depth: 0
 
-#       - name: run ostree.sh
-#         run: echo "hallo"
-#         env:
-#           DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
-#         timeout-minutes: 60
+      - name: run ostree.sh
+        run: echo "hallo"
+        env:
+          DOWNLOAD_NODE: ${{ secrets.DOWNLOAD_NODE }}
+        timeout-minutes: 60
 
-#       - name: Set non cancelled result status
-#         if: ${{ !cancelled() }}
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: ${{ job.status }}
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set non cancelled result status
+        if: ${{ !cancelled() }}
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: ${{ job.status }}
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Set cancelled result status
-#         if: ${{ cancelled() }}
-#         uses: octokit/request-action@v2.x
-#         with:
-#           route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
-#           context: ${{ env.STATUS_NAME }}
-#           state: error
-#           target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set cancelled result status
+        if: ${{ cancelled() }}
+        uses: octokit/request-action@v2.x
+        with:
+          route: 'POST /repos/${{ github.repository }}/statuses/${{ needs.pr-info.outputs.sha }}'
+          context: ${{ env.STATUS_NAME }}
+          state: error
+          target_url: 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - uses: actions/upload-artifact@v3
-#         if: ${{ always() }}
-#         with:
-#           name: edge-commit-8.3
-#           path: |
-#             *.json
-#             *.log
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: edge-commit-8.3
+          path: |
+            *.json
+            *.log
