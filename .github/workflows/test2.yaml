@@ -22,9 +22,7 @@ jobs:
           route: GET /repos/${{ github.repository }}/pulls/${{ steps.pr-num.outputs.pr_number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: print pr
-        run: |
-          echo "pr number is: ${{ steps.pr-num.outputs.pr_number }}"
+
     outputs:
       sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
       pr_number: ${{ steps.pr-num.outputs.pr_number }}
