@@ -110,7 +110,23 @@ podman login registry.redhat.io -u ${REDHAT_IO_USER} -p ${REDHAT_IO_TOKEN}
 podman login registry.stage.redhat.io -u ${STAGE_REDHAT_IO_USER} -p ${STAGE_REDHAT_IO_TOKEN}
 tee Containerfile > /dev/null << EOF
 FROM registry.redhat.io/rhel9/rhel-bootc
-COPY files/nightly.repo /etc/yum.repos.d/
+tee nightly.repo > /dev/null << EOF
+[RHEL-95-NIGHTLY-BaseOS]
+name=baseos
+baseurl=http://${DOWNLOAD_NODE}/rhel-9/nightly/RHEL-9/latest-RHEL-9.5.0/compose/BaseOS/x86_64/os
+enabled=1
+gpgcheck=0
+[RHEL-95-NIGHTLY-AppStream]
+name=appstream
+baseurl=http://${DOWNLOAD_NODE}/rhel-9/nightly/RHEL-9/latest-RHEL-9.5.0/compose/AppStream/x86_64/os/
+enabled=1
+gpgcheck=0
+[RHEL-95-NIGHTLY-CRB]
+name=crb
+baseurl=http://${DOWNLOAD_NODE}/rhel-9/nightly/RHEL-9/latest-RHEL-9.5.0/compose/CRB/x86_64/os/
+enabled=1
+gpgcheck=0
+EOF
 RUN dnf install -y \
     greenboot greenboot-default-health-checks && \
     systemctl enable greenboot-grub2-set-counter \
