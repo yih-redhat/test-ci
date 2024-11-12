@@ -18,6 +18,7 @@ jobs:
 
       - name: Run the tests
         run: |
+          sudo apt copr enable @teemtee/tmt
           sudo apt install -y tmt+provision-virtual
           sudo systemctl start libvirtd
           
