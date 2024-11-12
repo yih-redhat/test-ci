@@ -1,0 +1,23 @@
+---
+name: Greenboot Test on Fedora 40
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  fedora-40-bootc-qcow2:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4
+        with:
+          ref: ${{ needs.pr-info.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Run the tests
+        run: |
+          sudo apt install -y tmt+provision-virtual
+          sudo systemctl start libvirtd
+          
