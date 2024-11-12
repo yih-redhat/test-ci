@@ -18,7 +18,7 @@ jobs:
 
       - name: Run the tests
         run: |
-          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system
+          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system --fix-missing
           pip install --user "tmt[provision]"
           sudo systemctl start libvirtd
           
