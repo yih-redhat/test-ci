@@ -18,7 +18,7 @@ jobs:
 
       - name: Run the tests
         run: |
-          sudo apt copr enable @teemtee/tmt
-          sudo apt install -y tmt+provision-virtual
+          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system
+          pip install --user "tmt[provision]"
           sudo systemctl start libvirtd
           
