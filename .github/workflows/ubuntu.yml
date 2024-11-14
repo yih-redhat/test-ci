@@ -7,7 +7,6 @@ on:
 
 jobs:
   fedora-40-bootc-qcow2:
-    runs-on: ubuntu-latest
     container: quay.io/testing-farm/cli:v0.0.17-50fa044d
 
     steps:
