@@ -8,6 +8,7 @@ on:
 jobs:
   fedora-40-bootc-qcow2:
     runs-on: ubuntu-latest
+    container: quay.io/testing-farm/cli:v0.0.17-50fa044d
 
     steps:
       - name: Clone repository
@@ -18,8 +19,8 @@ jobs:
 
       - name: Run the tests
         run: |
-          sudo apt update
-          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system --fix-missing
-          pip install --user "tmt[provision]"
-          sudo systemctl start libvirtd
+          pwd
+          ls
+          cat /etc/os-release
+          testing-farm --help
           
