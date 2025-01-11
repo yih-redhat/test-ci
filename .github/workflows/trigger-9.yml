@@ -20,26 +20,15 @@ jobs:
       - name: Check RHEL 9.5 compose
         id: check_compose_id_95
         run: |
-          curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/COMPOSE_ID --output COMPOSE_ID_95
+          curl -s http://download-node-02.eng.bos.redhat.com/rhel-9/nightly/updates/RHEL-9/latest-RHEL-9.5.0/COMPOSE_ID --output COMPOSE_ID_95
           COMPOSE_ID_95=$(cat COMPOSE_ID_95)
-          echo "rhel95_compose=$COMPOSE_ID_95" >> $GITHUB_OUTPUT
+          echo "rhel95_compose=$COMPOSE_ID_95"
 
-          for pkg in $(PACKAGES_95)
+          for pkg in (acl alternatives audit-libs avahi-libs basesystem bash bzip2-libs)
           do
-            v=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">${pkg}-[0-9].*<" | tr -d "><")
+            v=$(curl -s "http://download-node-02.eng.bos.redhat.com/rhel-9/nightly/updates/RHEL-9/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">${pkg}-[0-9].*<" | tr -d "><")
             echo $v
           done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    outputs:
-      rhel94_compose: ${{ steps.check_compose_id_94.outputs.rhel94_compose }}
-      rhel95_compose: ${{ steps.check_compose_id_95.outputs.rhel95_compose }}
-      osbuild_version_94: ${{ steps.check_compose_id_94.outputs.osbuild_version_94 }}
-      osbuild_composer_version_94: ${{ steps.check_compose_id_94.outputs.osbuild_composer_version_94 }}
-      composer_cli_version_94: ${{ steps.check_compose_id_94.outputs.composer_cli_version_94 }}
-      osbuild_version_95: ${{ steps.check_compose_id_95.outputs.osbuild_version_95 }}
-      osbuild_composer_version_95: ${{ steps.check_compose_id_95.outputs.osbuild_composer_version_95 }}
       composer_cli_version_95: ${{ steps.check_compose_id_95.outputs.composer_cli_version_95 }}
       pr_running_94: ${{ steps.check_compose_id_94.outputs.pr_running_94 }}
       pr_running_95: ${{ steps.check_compose_id_95.outputs.pr_running_95 }}
