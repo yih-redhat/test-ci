@@ -20,8 +20,10 @@ jobs:
       - name: Check RHEL 9.5 compose
         id: check_compose_id_95
         run: |
+          i=1
           for pkg in acl alternatives audit-libs avahi-libs basesystem bash bzip2-libs
           do
             v=$(curl -s "http://download-node-02.eng.bos.redhat.com/rhel-9/nightly/updates/RHEL-9/RHEL-9.5.0-updates-20250109.1/compose/BaseOS/x86_64/os/Packages/" | grep -ioE ">${pkg}-[0-9].*<" | tr -d "><")
             echo $v
+            echo $i
           done
