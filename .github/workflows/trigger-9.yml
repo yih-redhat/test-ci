@@ -18,8 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: sudo dnf install -y gh
-
       - name: Check RHEL 9.5 compose
         id: check_compose_id_95
         run: |
