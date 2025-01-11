@@ -23,40 +23,8 @@ jobs:
       - name: Check RHEL 9.5 compose
         id: check_compose_id_95
         run: |
-          curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/STATUS --output STATUS_95
-          STATUS_95=$(cat STATUS_95)
-          if [[ "$STATUS_95" == "FINISHED" ]]; then
-              curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/COMPOSE_ID --output COMPOSE_ID_95
-              COMPOSE_ID_95=$(cat COMPOSE_ID_95)
-              TESTED_COMPOSE_95=( $( cat compose/compose.95 ) )
-              if [[ " ${TESTED_COMPOSE_95[*]} " =~ "$COMPOSE_ID_95" ]]; then
-                  COMPOSE_ID_95="false"
-              fi
-          else
-              COMPOSE_ID_95="false"
-          fi
-
-          if [[ "$COMPOSE_ID_95" != "false" ]]; then
-              gh pr list -R virt-s1/rhel-edge --state open --json title --jq '.[].title' > PR_LIST_95
-              PR_LIST_95=$(cat PR_LIST_95)
-              if [[ $PR_LIST_95 == *"$COMPOSE_ID_95"* ]]; then
-                  echo "pr_running_95=true" >> $GITHUB_OUTPUT
-              else
-                  echo "pr_running_95=false" >> $GITHUB_OUTPUT
-              fi
-
-              OSBUILD_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">osbuild-[0-9].*<" | tr -d "><")
-              OSBUILD_COMPOSER_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">osbuild-composer-[0-9].*<" | tr -d "><")
-              COMPOSER_CLI_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">weldr-client-[0-9].*<" | tr -d "><")
-              echo "osbuild_version_95=$OSBUILD_VERSION_95" >> $GITHUB_OUTPUT
-              echo "osbuild_composer_version_95=$OSBUILD_COMPOSER_VERSION_95" >> $GITHUB_OUTPUT
-              echo "composer_cli_version_95=$COMPOSER_CLI_VERSION_95" >> $GITHUB_OUTPUT
-          else
-              echo "osbuild_version_95=Null" >> $GITHUB_OUTPUT
-              echo "osbuild_composer_version_95=Null" >> $GITHUB_OUTPUT
-              echo "composer_cli_version_95=Null" >> $GITHUB_OUTPUT
-          fi
-
+          curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/COMPOSE_ID --output COMPOSE_ID_95
+          COMPOSE_ID_95=$(cat COMPOSE_ID_95)
           echo "rhel95_compose=$COMPOSE_ID_95" >> $GITHUB_OUTPUT
 
           for pkg in $(PACKAGES_95)
