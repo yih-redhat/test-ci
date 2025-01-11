@@ -1,0 +1,81 @@
+---
+name: RHEL 9 compose package trigger
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'
+
+env:
+  COMPOSE_URL_94: "http://${{ secrets.DOWNLOAD_NODE }}/rhel-9/nightly/updates/RHEL-9"
+  COMPOSE_URL_95: "http://${{ secrets.DOWNLOAD_NODE }}/rhel-9/nightly/updates/RHEL-9"
+  PACKAGES_95: (acl alternatives audit-libs avahi-libs basesystem bash bzip2-libs)
+
+jobs:
+  check-compose:
+    # Do not run this job on any fork repos
+    runs-on: container-runner
+    container: quay.io/fedora/fedora:38-x86_64
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: sudo dnf install -y gh
+
+      - name: Check RHEL 9.5 compose
+        id: check_compose_id_95
+        run: |
+          curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/STATUS --output STATUS_95
+          STATUS_95=$(cat STATUS_95)
+          if [[ "$STATUS_95" == "FINISHED" ]]; then
+              curl -s ${COMPOSE_URL_95}/latest-RHEL-9.5.0/COMPOSE_ID --output COMPOSE_ID_95
+              COMPOSE_ID_95=$(cat COMPOSE_ID_95)
+              TESTED_COMPOSE_95=( $( cat compose/compose.95 ) )
+              if [[ " ${TESTED_COMPOSE_95[*]} " =~ "$COMPOSE_ID_95" ]]; then
+                  COMPOSE_ID_95="false"
+              fi
+          else
+              COMPOSE_ID_95="false"
+          fi
+
+          if [[ "$COMPOSE_ID_95" != "false" ]]; then
+              gh pr list -R virt-s1/rhel-edge --state open --json title --jq '.[].title' > PR_LIST_95
+              PR_LIST_95=$(cat PR_LIST_95)
+              if [[ $PR_LIST_95 == *"$COMPOSE_ID_95"* ]]; then
+                  echo "pr_running_95=true" >> $GITHUB_OUTPUT
+              else
+                  echo "pr_running_95=false" >> $GITHUB_OUTPUT
+              fi
+
+              OSBUILD_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">osbuild-[0-9].*<" | tr -d "><")
+              OSBUILD_COMPOSER_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">osbuild-composer-[0-9].*<" | tr -d "><")
+              COMPOSER_CLI_VERSION_95=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">weldr-client-[0-9].*<" | tr -d "><")
+              echo "osbuild_version_95=$OSBUILD_VERSION_95" >> $GITHUB_OUTPUT
+              echo "osbuild_composer_version_95=$OSBUILD_COMPOSER_VERSION_95" >> $GITHUB_OUTPUT
+              echo "composer_cli_version_95=$COMPOSER_CLI_VERSION_95" >> $GITHUB_OUTPUT
+          else
+              echo "osbuild_version_95=Null" >> $GITHUB_OUTPUT
+              echo "osbuild_composer_version_95=Null" >> $GITHUB_OUTPUT
+              echo "composer_cli_version_95=Null" >> $GITHUB_OUTPUT
+          fi
+
+          echo "rhel95_compose=$COMPOSE_ID_95" >> $GITHUB_OUTPUT
+
+          for pkg in $(PACKAGES_95)
+          do
+            v=$(curl -s "${COMPOSE_URL_95}/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">${pkg}-[0-9].*<" | tr -d "><")
+            echo $v
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      rhel94_compose: ${{ steps.check_compose_id_94.outputs.rhel94_compose }}
+      rhel95_compose: ${{ steps.check_compose_id_95.outputs.rhel95_compose }}
+      osbuild_version_94: ${{ steps.check_compose_id_94.outputs.osbuild_version_94 }}
+      osbuild_composer_version_94: ${{ steps.check_compose_id_94.outputs.osbuild_composer_version_94 }}
+      composer_cli_version_94: ${{ steps.check_compose_id_94.outputs.composer_cli_version_94 }}
+      osbuild_version_95: ${{ steps.check_compose_id_95.outputs.osbuild_version_95 }}
+      osbuild_composer_version_95: ${{ steps.check_compose_id_95.outputs.osbuild_composer_version_95 }}
+      composer_cli_version_95: ${{ steps.check_compose_id_95.outputs.composer_cli_version_95 }}
+      pr_running_94: ${{ steps.check_compose_id_94.outputs.pr_running_94 }}
+      pr_running_95: ${{ steps.check_compose_id_95.outputs.pr_running_95 }}
