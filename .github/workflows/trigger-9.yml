@@ -14,8 +14,7 @@ env:
 jobs:
   check-compose:
     # Do not run this job on any fork repos
-    runs-on: container-runner
-    container: quay.io/fedora/fedora:38-x86_64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
