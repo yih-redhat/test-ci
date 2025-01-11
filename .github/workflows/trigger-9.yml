@@ -29,6 +29,3 @@ jobs:
             v=$(curl -s "http://download-node-02.eng.bos.redhat.com/rhel-9/nightly/updates/RHEL-9/${COMPOSE_ID_95}/compose/AppStream/x86_64/os/Packages/" | grep -ioE ">${pkg}-[0-9].*<" | tr -d "><")
             echo $v
           done
-      composer_cli_version_95: ${{ steps.check_compose_id_95.outputs.composer_cli_version_95 }}
-      pr_running_94: ${{ steps.check_compose_id_94.outputs.pr_running_94 }}
-      pr_running_95: ${{ steps.check_compose_id_95.outputs.pr_running_95 }}
