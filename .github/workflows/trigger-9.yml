@@ -2,9 +2,9 @@
 name: RHEL 9 compose package trigger
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * *'
+  issues:
+    types:
+      - opened
 
 env:
   COMPOSE_URL_94: "http://${{ secrets.DOWNLOAD_NODE }}/rhel-9/nightly/updates/RHEL-9"
