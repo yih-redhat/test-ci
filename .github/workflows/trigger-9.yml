@@ -7,8 +7,7 @@ on:
       - opened
 
 env:
-  COMPOSE_URL_94: "http://${{ secrets.DOWNLOAD_NODE }}/rhel-9/nightly/updates/RHEL-9"
-  COMPOSE_URL_95: "http://${{ secrets.DOWNLOAD_NODE }}/rhel-9/nightly/updates/RHEL-9"
+  COMPOSE_URL_95: "http://download-node-02.eng.bos.redhat.com/rhel-9/nightly/updates/RHEL-9"
   PACKAGES_95: (acl alternatives audit-libs avahi-libs basesystem bash bzip2-libs)
 
 jobs:
