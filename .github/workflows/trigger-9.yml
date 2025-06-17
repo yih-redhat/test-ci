@@ -65,7 +65,7 @@ jobs:
                           if [[ "$new" == "$old" ]]; then
                               echo "Package ${pkg} not-updated"
                           else
-                              updated_pkgs+=$'\n'"${pkg}"
+                              updated_pkgs+=$'\n'"    ${pkg}"
                               count=$((count + 1))
                           fi
                       elif curl -s "${BASEOS_URL}" | grep -ioE ">${pkg}-[0-9].*<"; then
@@ -74,7 +74,7 @@ jobs:
                           if [[ "$new" == "$old" ]]; then
                               echo "Package ${pkg} not updated"
                           else
-                              updated_pkgs+=$'\n'"${pkg}"
+                              updated_pkgs+=$'\n'"    ${pkg}"
                               count=$((count + 1))
                           fi
                       else
@@ -87,7 +87,7 @@ jobs:
                           if [[ "$new" == "$old" ]]; then
                               echo "Package ${pkg} not-updated"
                           else
-                              updated_pkgs+=$'\n'"${pkg}"
+                              updated_pkgs+=$'\n'"    ${pkg}"
                               count=$((count + 1))
                           fi
                       elif curl -s "${BASEOS_URL}" | grep -ioE ">${pkg}-[0-9].*x86_64.*<"; then
@@ -96,7 +96,7 @@ jobs:
                           if [[ "$new" == "$old" ]]; then
                               echo "Package ${pkg} not updated"
                           else
-                              updated_pkgs+=$'\n'"${pkg}"
+                              updated_pkgs+=$'\n'"    ${pkg}"
                               count=$((count + 1))
                           fi
                       else
@@ -164,4 +164,4 @@ jobs:
                 - ${{ needs.check-compose.outputs.osbuild_composer_version_96 }}
                 - ${{ needs.check-compose.outputs.composer_cli_version_96 }}
             - Updated packages(${{ needs.check-compose.outputs.count }}):
-                    ${{ needs.check-compose.outputs.updated_pkgs }}
+                  ${{ needs.check-compose.outputs.updated_pkgs }}
