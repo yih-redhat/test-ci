@@ -1,3 +1,4 @@
+---
 name: CI Test
 
 on:
@@ -8,9 +9,6 @@ on:
 
 jobs:
   check-pull-request:
-    # Run for:
-    # - PR events (opened/synchronized/reopened)
-    # - Comments containing exactly "/test" on PRs
     if: |
       github.event_name == 'pull_request_target' ||
       (
@@ -20,17 +18,17 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      # Determine PR author from different event contexts
       - name: Set PR author
         id: set-author
         run: |
           if [ "${{ github.event_name }}" == "pull_request_target" ]; then
             echo "AUTHOR=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
+            echo "PR_NUM=${{ github.event.number }}" >> $GITHUB_ENV
           else
             echo "AUTHOR=${{ github.event.issue.user.login }}" >> $GITHUB_ENV
+            echo "PR_NUM=${{ github.event.issue.number }}" >> $GITHUB_ENV
           fi
 
-      # Existing permissions check (updated to use the author variable)
       - name: Query author repository permissions
         uses: octokit/request-action@v2.x
         id: user_permission
@@ -50,6 +48,78 @@ jobs:
         uses: octokit/request-action@v2.x
         id: pr-api
         with:
-          route: GET /repos/${{ github.repository }}/pulls/${{ github.event.number }}
+          route: GET /repos/${{ github.repository }}/pulls/${{ env.PR_NUM }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
+      sha: ${{ fromJson(steps.pr-api.outputs.data).head.sha }}
+      ref: ${{ fromJson(steps.pr-api.outputs.data).head.ref }}
+      repo_url: ${{ fromJson(steps.pr-api.outputs.data).head.repo.html_url }}
+
+  Centos-10-bootc:
+    needs: check-pull-request
+    if: ${{ needs.check-pull-request.outputs.allowed_user == 'true' }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run the tests
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          compose: CentOS-Stream-10
+          api_key: ${{ secrets.TF_API_KEY }}
+          git_url: ${{ needs.check-pull-request.outputs.repo_url }}
+          git_ref: ${{ needs.check-pull-request.outputs.ref }}
+          tmt_context: "arch=x86_64;distro=cs-10"
+          tmt_plan_regex: bootc
+          tf_scope: private
+          variables: "ARCH=x86_64"
+          timeout: 90
+          pull_request_status_name: centos-10-bootc
+          update_pull_request_status: true
+
+  Fedora-43-bootc:
+    needs: check-pull-request
+    if: ${{ needs.check-pull-request.outputs.allowed_user == 'true' }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run the tests
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          compose: Fedora-Rawhide
+          api_key: ${{ secrets.TF_API_KEY }}
+          git_url: ${{ needs.check-pull-request.outputs.repo_url }}
+          git_ref: ${{ needs.check-pull-request.outputs.ref }}
+          tmt_context: "arch=x86_64;distro=fedora-43"
+          tmt_plan_regex: bootc
+          tf_scope: private
+          variables: "ARCH=x86_64"
+          timeout: 90
+          pull_request_status_name: fedora-43-bootc
+          update_pull_request_status: true
+
+  Centos-9-ostree:
+    needs: check-pull-request
+    if: ${{ needs.check-pull-request.outputs.allowed_user == 'true' }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run the tests
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          compose: CentOS-Stream-9
+          api_key: ${{ secrets.TF_API_KEY }}
+          git_url: ${{ needs.check-pull-request.outputs.repo_url }}
+          git_ref: ${{ needs.check-pull-request.outputs.ref }}
+          tmt_context: "arch=x86_64;distro=cs-9"
+          tmt_plan_regex: ostree
+          tf_scope: private
+          variables: "ARCH=x86_64"
+          timeout: 90
+          pull_request_status_name: centos-9-ostree
+          update_pull_request_status: true
