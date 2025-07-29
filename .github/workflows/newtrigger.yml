@@ -71,6 +71,7 @@ jobs:
         with:
           compose: CentOS-Stream-10
           api_key: ${{ secrets.TF_API_KEY }}
+          github_sha: ${{ needs.check-pull-request.outputs.sha }}
           git_url: ${{ needs.check-pull-request.outputs.repo_url }}
           git_ref: ${{ needs.check-pull-request.outputs.ref }}
           tmt_context: "arch=x86_64;distro=cs-10"
@@ -91,6 +92,7 @@ jobs:
         with:
           compose: Fedora-Rawhide
           api_key: ${{ secrets.TF_API_KEY }}
+          github_sha: ${{ needs.check-pull-request.outputs.sha }}
           git_url: ${{ needs.check-pull-request.outputs.repo_url }}
           git_ref: ${{ needs.check-pull-request.outputs.ref }}
           tmt_context: "arch=x86_64;distro=fedora-43"
@@ -111,6 +113,7 @@ jobs:
         with:
           compose: CentOS-Stream-9
           api_key: ${{ secrets.TF_API_KEY }}
+          github_sha: ${{ needs.check-pull-request.outputs.sha }}
           git_url: ${{ needs.check-pull-request.outputs.repo_url }}
           git_ref: ${{ needs.check-pull-request.outputs.ref }}
           tmt_context: "arch=x86_64;distro=cs-9"
