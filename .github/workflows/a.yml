@@ -1,0 +1,78 @@
+name: Check Compose IDs
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  COMPOSE_URL_44: https://kojipkgs.fedoraproject.org/compose/iot/latest-Fedora-IoT-44
+  COMPOSE_URL_43: https://kojipkgs.fedoraproject.org/compose/iot/latest-Fedora-IoT-43
+
+jobs:
+  check-compose-43:
+    runs-on: ubuntu-latest
+    outputs:
+      need-pr: ${{ steps.check-compose.outputs.need-pr }}
+      compose-id: ${{ steps.get-compose-id.outputs.compose-id }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get compose ID for 43 IoT
+      id: get-compose-id
+      run: |
+        compose_id=$(curl -s ${COMPOSE_URL_43}/COMPOSE_ID)
+        echo "compose-id=$compose_id" >> $GITHUB_OUTPUT
+        echo "COMPOSE_ID=$compose_id" >> $GITHUB_ENV
+
+    - name: Check if compose ID exists in file
+      id: check-compose
+      run: |
+        if grep -q "$COMPOSE_ID" compose/compose.f43-iot; then
+          echo "Compose ID exists in file"
+          echo "need-pr=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Check if PR already exists for this compose ID
+        response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls?state=open")
+        if echo "$response" | grep -q "$COMPOSE_ID"; then
+          echo "Open PR exists for this compose ID"
+          echo "need-pr=false" >> $GITHUB_OUTPUT
+        else
+          echo "need-pr=true" >> $GITHUB_OUTPUT
+        fi
+
+  create-pr-43:
+    runs-on: ubuntu-latest
+    needs: check-compose-43
+    if: needs.check-compose-43.outputs.need-pr == 'true'
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Update compose_id_43 file
+      run: |
+        echo "${{ needs.check-compose-43.outputs.compose-id }}" >> compose/compose.f43-iot
+
+    - name: Create Pull Request
+      id: create-pr
+      uses: peter-evans/create-pull-request@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "${{ needs.check-compose-43.outputs.compose-id }}"
+        commit-message: "Add compose ID ${{ needs.check-compose-43.outputs.compose-id }} to compose_id_43"
+        committer: fedora-ci-bot <yih@redhat.com>
+        author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+        branch: cpr
+        branch-suffix: random
+        delete-branch: true
+        body: "${{ needs.check-compose-43.outputs.compose-id }}"
+        labels: auto-merge
+
+    - name: Merge Pull Request
+      if: steps.create-pr.outputs.pull-request-number != ''
+      run: |
+        gh pr merge --auto --merge "${{ steps.create-pr.outputs.pull-request-number }}"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
