@@ -1,0 +1,103 @@
+name: Run Fedora IoT test
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  check-permissions:
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && github.event.comment.body == '/test-f43-iot'
+    steps:
+    - name: Check if user does have correct permissions
+      if: contains('admin write', fromJson(steps.user_permission.outputs.data).permission)
+      id: check_user_perm
+      run: |
+        echo "User '${{ github.event.sender.login }}' has permission '${{ fromJson(steps.user_permission.outputs.data).permission }}' allowed values: 'admin', 'write'"
+        echo "allowed_user=true" >> $GITHUB_OUTPUT
+
+    - name: Get PR information
+      id: get-pr-info
+      uses: octokit/request-action@v2.x
+      with:
+        route: GET /repos/{owner}/{repo}/pulls/{pull_number}
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        pull_number: ${{ github.event.issue.number }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      allowed_user: ${{ steps.check_user_perm.outputs.allowed_user }}
+      compose_id: ${{ steps.get-pr-info.outputs.data.body }}
+      sha: ${{ steps.get-pr-info.outputs.data.head.sha }}
+      repo_url: ${{ steps.get-pr-info.outputs.data.head.repo.html_url }}
+      ref: ${{ steps.get-pr-info.outputs.data.head.ref }}
+
+  run-testing-farm:
+    runs-on: ubuntu-latest
+    needs: check-permissions
+    if: needs.check-permissions.outputs.allowed_user == 'true'
+    steps:
+    - name: Run the tests
+      uses: sclorg/testing-farm-as-github-action@v3.1.2
+      id: run-test
+      with:
+        compose: Fedora-43
+        arch: x86_64
+        api_key: ${{ secrets.TF_API_KEY }}
+        git_url: ${{ needs.check-permissions.outputs.repo_url }}
+        git_ref: ${{ needs.check-permissions.outputs.ref }}
+        update_pull_request_status: true
+        tmt_context: "arch=x86_64;distro=fedora-43"
+        pull_request_status_name: "iot-f43-x86"
+        tmt_plan_regex: iot-x86
+        tf_scope: private
+        variables: "COMPOSE_ID=${{ needs.check-permissions.outputs.compose_id }}"
+
+    - name: Send test results to Slack via webhook
+      if: always()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{
+          "text": "Testing Farm Results for Fedora 43 IoT x86",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Testing Farm Results for Fedora 43 IoT x86*"
+              }
+            },
+            {
+              "type": "section",
+              "fields": [
+                {
+                  "type": "mrkdwn",
+                  "text": "*Status:* ${{ job.status }}"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Compose ID:* ${{ needs.check-permissions.outputs.compose_id }}"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Triggered by:* ${{ github.actor }}"
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Workflow Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+              }
+            }
+          ]
+        }' ${{ secrets.SLACK_WEBHOOK_URL_FEDORA_IOT_CI }}
+
+    - name: Merge Pull Request
+      if: always()
+      uses: peter-evans/merge-pull@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        pull-request-number: ${{ github.event.issue.number }}
+        merge-method: merge
