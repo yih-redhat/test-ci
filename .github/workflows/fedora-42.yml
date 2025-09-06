@@ -69,15 +69,10 @@ jobs:
     - name: Send test results to Slack via webhook
       if: always()
       run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          status_text=":white_check_mark: ${{ job.status }}"
-          color="good"
-        elif [ "${{ job.status }}" == "failure" ]; then
-          status_text=":x: ${{ job.status }}"
-          color="danger"
+        if [ "${{ job.status }}" = "success" ]; then
+          emoji=":white_check_mark:"
         else
-          status_text="${{ job.status }}"
-          color="#808080"
+          emoji=":x:"
         fi
 
         curl -X POST -H 'Content-type: application/json' --data '{
@@ -87,22 +82,8 @@ jobs:
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "`'"$status_text"'` *Fedora-42-x86_64-${{ needs.check-permissions.outputs.compose_id }} Test Log:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                "text": "'"$emoji"' *Fedora-IoT-42 | x86_64 | ${{ needs.check-permissions.outputs.compose_id }} |* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Test Log>"
               }
-            }
-          ],
-          "attachments": [
-            {
-              "color": "'"$color"'",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Status Details:*"
-                  }
-                }
-              ]
             }
           ]
         }' ${{ secrets.SLACK_WEBHOOK_URL_FEDORA_IOT_CI }}

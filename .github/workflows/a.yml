@@ -11,6 +11,7 @@ env:
 jobs:
   check-compose-42:
     runs-on: ubuntu-latest
+    if: github.event.comment.body == '/test'
     outputs:
       need-pr: ${{ steps.check-compose.outputs.need-pr }}
       compose-id: ${{ steps.get-compose-id.outputs.compose-id }}
