@@ -18,7 +18,7 @@ curl -X POST -H 'Content-type: application/json' --data '{
         }
     }
     ]
-}' https://hooks.slack.com/services/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
+}' 
 
 
 if [ "${{ job.status }}" = "success" ]; then
@@ -40,4 +40,4 @@ curl -X POST -H 'Content-type: application/json' --data '{
       }
     }
   ]
-}' https://hooks.slack.com/services/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
+}' 
