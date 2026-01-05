@@ -2,9 +2,9 @@
 name: Fedora compose trigger
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 8 * * *'
+  issue_comment:
+    types:
+      - created
 
 env:
   COMPOSE_URL_F43: https://dl.fedoraproject.org/pub/fedora/linux/development/43
